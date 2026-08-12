@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: api-pedidos-postgres
+    environment:
+      POSTGRES_DB: api_pedidos
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "2345:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
