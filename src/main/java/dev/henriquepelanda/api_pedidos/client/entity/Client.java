@@ -57,13 +57,11 @@ public class Client {
     (
         String name,
         String email,
-        String document,
-        String password
+        String document
     )
     {
         this.name = name;
         this.email = email;
         this.document = document;
-        this.password = password;
     }
 }

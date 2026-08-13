@@ -7,6 +7,9 @@ import dev.henriquepelanda.api_pedidos.category.repository.CategoryRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 public class CategoryService {
   private final CategoryRepository _categoryRepository;
@@ -16,11 +19,16 @@ public class CategoryService {
     this._categoryRepository = categoryRepository;
   }
 
-  public CategoryResponseDTO createCategory
+  public CategoryResponseDTO create
   (
     CategoryRequestDTO request
   )
   {
+    if(_categoryRepository.existsByName(request.name()))
+    {
+      throw new BusinessException("Category name already exist!");
+    }
+
     if(request.name() == null){
       throw new BusinessException("Category name invalid!");
     }
@@ -41,5 +49,53 @@ public class CategoryService {
             savedCategory.getName(),
             savedCategory.getDescription()
     );
+  }
+
+  public List<CategoryResponseDTO> findAll(){
+    List<Category> categories = _categoryRepository.findAll();
+
+    return categories.stream()
+            .map(category -> new CategoryResponseDTO(
+                    category.getId(),
+                    category.getName(),
+                    category.getDescription()
+            ))
+            .toList();
+  }
+
+  public CategoryResponseDTO findById(UUID id){
+    Category category = _categoryRepository.findById(id)
+            .orElseThrow(() -> new BusinessException("category not found!"));
+
+    return new CategoryResponseDTO(
+            category.getId(),
+            category.getName(),
+            category.getDescription()
+    );
+  }
+
+  public CategoryResponseDTO update(UUID id, CategoryRequestDTO request){
+    Category category = _categoryRepository.findById(id)
+            .orElseThrow(() -> new BusinessException("category not found!"));
+
+    category.update(
+            request.name(),
+            request.description()
+    );
+
+    Category updated = _categoryRepository.save(category);
+
+    return new CategoryResponseDTO(
+            updated.getId(),
+            updated.getName(),
+            updated.getDescription()
+    );
+  }
+
+  public void delete(UUID id){
+    Category category = _categoryRepository.findById(id)
+            .orElseThrow(() -> new BusinessException("Category not found!"));
+
+    _categoryRepository.delete(category);
   }
 }
