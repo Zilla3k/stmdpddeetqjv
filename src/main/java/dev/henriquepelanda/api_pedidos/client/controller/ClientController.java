@@ -4,10 +4,11 @@ import dev.henriquepelanda.api_pedidos.client.dto.ClientRequestDTO;
 import dev.henriquepelanda.api_pedidos.client.dto.ClientResponseDTO;
 import dev.henriquepelanda.api_pedidos.client.services.ClientService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,8 +28,12 @@ public class ClientController {
 
   @GetMapping
   @ResponseStatus(HttpStatus.OK)
-  public List<ClientResponseDTO> findAll(){
-    return clientService.findAll();
+  public Page<ClientResponseDTO> findAll(
+          @RequestParam(required = false) String name,
+          @RequestParam(required = false) String email,
+          Pageable pageable
+  ){
+    return clientService.findAll(name, email, pageable);
   }
 
   @GetMapping("/{id}")
