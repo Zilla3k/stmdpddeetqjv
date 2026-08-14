@@ -42,7 +42,10 @@ public class Category {
         return description;
     }
 
-    public void update(String name, String description){
+    public void update(
+            String name,
+            String description
+    ){
         this.name = name;
         this.description = description;
     }
