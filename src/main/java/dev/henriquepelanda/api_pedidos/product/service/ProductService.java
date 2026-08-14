@@ -1,5 +1,6 @@
 package dev.henriquepelanda.api_pedidos.product.service;
 
+import dev.henriquepelanda.api_pedidos.category.repository.CategoryRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductRequestDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductResponseDTO;
@@ -14,17 +15,20 @@ import java.util.UUID;
 @Service
 public class ProductService {
   private final ProductRepository _productRepository;
+  private final CategoryRepository categoryRepository;
 
-  public ProductService(ProductRepository productRepository){
+  public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository){
     this._productRepository = productRepository;
+    this.categoryRepository = categoryRepository;
   }
 
   public ProductResponseDTO create(ProductRequestDTO request){
     if(_productRepository.existsByName(request.name())){
       throw new BusinessException("Product name already exists!");
     }
-    if(_productRepository.existsByCategoryId(request.categoryId())){
-      throw new BusinessException("This product with this category already exists!");
+
+    if(!categoryRepository.existsById(request.categoryId())) {
+      throw new BusinessException("Category not found!");
     }
 
     if (request.price().compareTo(BigDecimal.ZERO) <= 0) {

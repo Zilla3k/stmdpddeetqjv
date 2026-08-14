@@ -85,4 +85,12 @@ public class Product{
       this.stockQuantity = stockQuantity;
     }
   }
+
+  public void decreaseStock(Integer quantity) {
+    if (quantity == null) {
+      return;
+    }
+
+    this.stockQuantity = this.stockQuantity - quantity;
+  }
 }
