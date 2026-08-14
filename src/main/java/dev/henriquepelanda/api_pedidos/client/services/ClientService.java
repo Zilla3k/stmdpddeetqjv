@@ -4,10 +4,12 @@ import dev.henriquepelanda.api_pedidos.client.dto.ClientRequestDTO;
 import dev.henriquepelanda.api_pedidos.client.dto.ClientResponseDTO;
 import dev.henriquepelanda.api_pedidos.client.entity.Client;
 import dev.henriquepelanda.api_pedidos.client.repository.ClientRepository;
+import dev.henriquepelanda.api_pedidos.client.specifications.ClientSpecification;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -53,17 +55,16 @@ public class ClientService {
     );
   }
 
-  public List<ClientResponseDTO> findAll(){
-    List<Client> clients = _clientRepository.findAll();
-
-    return clients.stream()
+  public Page<ClientResponseDTO> findAll(String name, String email, Pageable pageable) {
+    return _clientRepository.findAll(
+                    ClientSpecification.nameContains(name).and(ClientSpecification.emailContains(email)),
+                    pageable)
             .map(client -> new ClientResponseDTO(
                     client.getId(),
                     client.getName(),
-                    client.getDocument(),
-                    client.getEmail()
-            ))
-            .toList();
+                    client.getEmail(),
+                    client.getDocument()
+            ));
   }
 
   public ClientResponseDTO findById(UUID id){

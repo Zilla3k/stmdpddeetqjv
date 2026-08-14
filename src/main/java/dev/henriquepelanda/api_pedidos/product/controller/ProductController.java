@@ -1,13 +1,15 @@
 package dev.henriquepelanda.api_pedidos.product.controller;
 
 import dev.henriquepelanda.api_pedidos.product.dto.ProductRequestDTO;
+import dev.henriquepelanda.api_pedidos.product.dto.ProductFilterDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductResponseDTO;
 import dev.henriquepelanda.api_pedidos.product.service.ProductService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,8 +29,12 @@ public class ProductController {
   }
 
   @GetMapping
-  public List<ProductResponseDTO> findAll(){
-    return productService.findAll();
+  public Page<ProductResponseDTO> findAll(
+          @RequestParam(required = false) String name,
+          @RequestParam(required = false) UUID categoryId,
+          Pageable pageable
+  ){
+    return productService.findAll(new ProductFilterDTO(name, categoryId), pageable);
   }
 
   @GetMapping("/{id}")

@@ -2,14 +2,17 @@ package dev.henriquepelanda.api_pedidos.product.service;
 
 import dev.henriquepelanda.api_pedidos.category.repository.CategoryRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import dev.henriquepelanda.api_pedidos.product.dto.ProductFilterDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductRequestDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductResponseDTO;
 import dev.henriquepelanda.api_pedidos.product.entity.Product;
 import dev.henriquepelanda.api_pedidos.product.repository.ProductRepository;
+import dev.henriquepelanda.api_pedidos.product.specification.ProductSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -57,10 +60,8 @@ public class ProductService {
     );
   }
 
-  public List<ProductResponseDTO> findAll(){
-    List<Product> products = _productRepository.findAll();
-
-    return products.stream()
+  public Page<ProductResponseDTO> findAll(ProductFilterDTO filter, Pageable pageable){
+    return _productRepository.findAll(ProductSpecification.withFilters(filter), pageable)
             .map(product -> new ProductResponseDTO(
                     product.getId(),
                     product.getName(),
@@ -68,8 +69,7 @@ public class ProductService {
                     product.getPrice(),
                     product.getCategoryId(),
                     product.getStockQuantity()
-            ))
-            .toList();
+            ));
   }
 
   public ProductResponseDTO findById(UUID id){
@@ -89,6 +89,10 @@ public class ProductService {
   public ProductResponseDTO update(UUID id, ProductRequestDTO request){
     Product product = _productRepository.findById(id)
             .orElseThrow(() -> new BusinessException("Product not found!"));
+
+    if (request.categoryId() != null && !categoryRepository.existsById(request.categoryId())) {
+      throw new BusinessException("Category not found!");
+    }
 
     product.update(
             request.name(),
