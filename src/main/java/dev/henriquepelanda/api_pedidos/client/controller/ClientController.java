@@ -50,7 +50,7 @@ public class ClientController {
   }
 
   @DeleteMapping("/{id}")
-  @ResponseStatus(HttpStatus.OK)
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable UUID id){
     clientService.delete(id);
   }

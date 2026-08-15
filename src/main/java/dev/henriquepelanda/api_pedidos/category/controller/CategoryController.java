@@ -28,21 +28,25 @@ public class CategoryController {
   }
 
   @GetMapping
+  @ResponseStatus(HttpStatus.OK)
   public List<CategoryResponseDTO> findAll(){
     return _categoryService.findAll();
   }
 
   @GetMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
   public CategoryResponseDTO findById(@PathVariable UUID id){
     return _categoryService.findById(id);
   }
 
   @PatchMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
   public CategoryResponseDTO update(@PathVariable UUID id, @RequestBody @Valid CategoryUpdateDTO request){
     return _categoryService.update(id, request);
   }
 
   @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable UUID id){
     _categoryService.delete(id);
   }
