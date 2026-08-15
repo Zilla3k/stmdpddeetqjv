@@ -93,6 +93,12 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Order not found!"));
 
+        validateStatusTransition(order.getStatus(), request.status());
+
+        if (request.status() == OrderStatus.CANCELLED) {
+            restockOrderItems(order);
+        }
+
         order.updateStatus(request.status());
         Order updated = orderRepository.saveAndFlush(order);
 
@@ -128,5 +134,30 @@ public class OrderService {
                         ))
                         .toList()
         );
+    }
+
+    private void validateStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        if (currentStatus == newStatus) {
+            throw new BusinessException("Order already has status " + currentStatus + "!");
+        }
+
+        switch (currentStatus) {
+            case PENDING -> {
+                if (newStatus != OrderStatus.CONFIRMED && newStatus != OrderStatus.CANCELLED) {
+                    throw new BusinessException("Pending orders can only be confirmed or cancelled!");
+                }
+            }
+            case CONFIRMED -> {
+                if (newStatus != OrderStatus.COMPLETED && newStatus != OrderStatus.CANCELLED) {
+                    throw new BusinessException("Confirmed orders can only be completed or cancelled!");
+                }
+            }
+            case CANCELLED, COMPLETED ->
+                    throw new BusinessException("Finished orders cannot change status!");
+        }
+    }
+
+    private void restockOrderItems(Order order) {
+        order.getItems().forEach(item -> item.getProduct().increaseStock(item.getQuantity()));
     }
 }
