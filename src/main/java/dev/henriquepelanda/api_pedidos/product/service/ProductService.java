@@ -5,6 +5,7 @@ import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductFilterDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductRequestDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductResponseDTO;
+import dev.henriquepelanda.api_pedidos.product.dto.ProductUpdateDTO;
 import dev.henriquepelanda.api_pedidos.product.entity.Product;
 import dev.henriquepelanda.api_pedidos.product.repository.ProductRepository;
 import dev.henriquepelanda.api_pedidos.product.specification.ProductSpecification;
@@ -86,7 +87,7 @@ public class ProductService {
     );
   }
 
-  public ProductResponseDTO update(UUID id, ProductRequestDTO request){
+  public ProductResponseDTO update(UUID id, ProductUpdateDTO request){
     Product product = _productRepository.findById(id)
             .orElseThrow(() -> new BusinessException("Product not found!"));
 

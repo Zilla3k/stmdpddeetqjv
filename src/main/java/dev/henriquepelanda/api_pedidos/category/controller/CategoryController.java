@@ -3,6 +3,7 @@ package dev.henriquepelanda.api_pedidos.category.controller;
 
 import dev.henriquepelanda.api_pedidos.category.dto.CategoryRequestDTO;
 import dev.henriquepelanda.api_pedidos.category.dto.CategoryResponseDTO;
+import dev.henriquepelanda.api_pedidos.category.dto.CategoryUpdateDTO;
 import dev.henriquepelanda.api_pedidos.category.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -37,7 +38,7 @@ public class CategoryController {
   }
 
   @PatchMapping("/{id}")
-  public CategoryResponseDTO update(@PathVariable UUID id, @RequestBody CategoryRequestDTO request){
+  public CategoryResponseDTO update(@PathVariable UUID id, @RequestBody @Valid CategoryUpdateDTO request){
     return _categoryService.update(id, request);
   }
 
