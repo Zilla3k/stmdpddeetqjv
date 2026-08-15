@@ -3,6 +3,7 @@ package dev.henriquepelanda.api_pedidos.order.services;
 import dev.henriquepelanda.api_pedidos.client.entity.Client;
 import dev.henriquepelanda.api_pedidos.client.repository.ClientRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import dev.henriquepelanda.api_pedidos.common.exception.ResourceNotFoundException;
 import dev.henriquepelanda.api_pedidos.order.dto.OrderItemRequestDTO;
 import dev.henriquepelanda.api_pedidos.order.dto.OrderRequestDTO;
 import dev.henriquepelanda.api_pedidos.order.dto.OrderStatusRequestDTO;
@@ -125,7 +126,7 @@ class OrderServiceTest {
                 List.of(new OrderItemRequestDTO(productId, 1))
         );
 
-        assertThrows(BusinessException.class, () -> orderService.create(request));
+        assertThrows(ResourceNotFoundException.class, () -> orderService.create(request));
 
         verify(productRepository, never()).findById(any());
         verify(orderRepository, never()).saveAndFlush(any());

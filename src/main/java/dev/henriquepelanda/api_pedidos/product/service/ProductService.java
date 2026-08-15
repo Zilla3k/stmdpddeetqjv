@@ -2,13 +2,15 @@ package dev.henriquepelanda.api_pedidos.product.service;
 
 import dev.henriquepelanda.api_pedidos.category.repository.CategoryRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import dev.henriquepelanda.api_pedidos.common.exception.InvalidRequestException;
+import dev.henriquepelanda.api_pedidos.common.exception.ResourceNotFoundException;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductFilterDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductRequestDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductResponseDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductUpdateDTO;
 import dev.henriquepelanda.api_pedidos.product.entity.Product;
 import dev.henriquepelanda.api_pedidos.product.repository.ProductRepository;
-import dev.henriquepelanda.api_pedidos.product.specification.ProductSpecification;
+import dev.henriquepelanda.api_pedidos.product.specifications.ProductSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,7 +37,7 @@ public class ProductService {
     }
 
     if(!categoryRepository.existsById(request.categoryId())) {
-      throw new BusinessException("Category not found!");
+      throw new ResourceNotFoundException("Category not found!");
     }
 
     if (request.price().compareTo(BigDecimal.ZERO) <= 0) {
@@ -82,7 +84,7 @@ public class ProductService {
 
   public ProductResponseDTO findById(UUID id){
     Product product = _productRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Product not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
 
     return new ProductResponseDTO(
             product.getId(),
@@ -96,7 +98,7 @@ public class ProductService {
 
   public ProductResponseDTO update(UUID id, ProductUpdateDTO request){
     Product product = _productRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Product not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
 
     String name = request.name() != null ? requireText(request.name(), "Product name cannot be blank!") : product.getName();
     String description = request.description() != null ? requireText(request.description(), "Product description cannot be blank!") : product.getDescription();
@@ -104,7 +106,7 @@ public class ProductService {
     UUID categoryId = request.categoryId() != null ? request.categoryId() : product.getCategoryId();
     Integer stockQuantity = request.stockQuantity() != null ? request.stockQuantity() : product.getStockQuantity();
 
-    if (request.name() != null && !request.name().equals(product.getName()) && _productRepository.existsByName(request.name())) {
+    if (request.name() != null && !name.equals(product.getName()) && _productRepository.existsByName(name)) {
       throw new BusinessException("Product name already exists!");
     }
 
@@ -117,7 +119,7 @@ public class ProductService {
     }
 
     if (request.categoryId() != null && !categoryRepository.existsById(request.categoryId())) {
-      throw new BusinessException("Category not found!");
+      throw new ResourceNotFoundException("Category not found!");
     }
 
     product.update(
@@ -142,14 +144,14 @@ public class ProductService {
 
   public void delete(UUID id){
     Product product = _productRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Product not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
 
     _productRepository.delete(product);
   }
 
   private String requireText(String value, String message) {
     if (value == null || value.trim().isEmpty()) {
-      throw new BusinessException(message);
+      throw new InvalidRequestException(message);
     }
 
     return value.trim();

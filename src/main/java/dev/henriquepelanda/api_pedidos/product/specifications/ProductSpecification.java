@@ -1,4 +1,4 @@
-package dev.henriquepelanda.api_pedidos.product.specification;
+package dev.henriquepelanda.api_pedidos.product.specifications;
 
 import dev.henriquepelanda.api_pedidos.product.dto.ProductFilterDTO;
 import dev.henriquepelanda.api_pedidos.product.entity.Product;
