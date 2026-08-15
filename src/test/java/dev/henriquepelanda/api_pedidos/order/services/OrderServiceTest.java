@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -163,6 +164,46 @@ class OrderServiceTest {
     }
 
     @Test
+    void createShouldThrowWhenOrderHasNoItems() {
+        UUID clientId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+
+        OrderRequestDTO request = new OrderRequestDTO(clientId, List.of());
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> orderService.create(request));
+
+        assertEquals("Order must have at least one item!", exception.getMessage());
+        verifyNoInteractions(productRepository);
+        verify(orderRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void createShouldThrowWhenProductDoesNotExist() {
+        UUID clientId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        OrderRequestDTO request = new OrderRequestDTO(
+                clientId,
+                List.of(new OrderItemRequestDTO(productId, 1))
+        );
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> orderService.create(request));
+
+        assertEquals("Product not found!", exception.getMessage());
+        verify(orderRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
     void updateStatusShouldPersistNewStatus() {
         UUID orderId = UUID.randomUUID();
         UUID clientId = UUID.randomUUID();
@@ -183,6 +224,168 @@ class OrderServiceTest {
         assertEquals(OrderStatus.CONFIRMED, response.status());
         assertEquals(orderId, response.id());
         verify(orderRepository).saveAndFlush(order);
+    }
+
+    @Test
+    void updateStatusShouldRestockWhenCancelled() {
+        UUID orderId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Product product = new Product("T-Shirt", "Basic black T-Shirt", new BigDecimal("79.90"), UUID.randomUUID(), 10);
+        ReflectionTestUtils.setField(product, "id", productId);
+
+        Order order = new Order(client, OrderStatus.CONFIRMED, new BigDecimal("79.90"));
+        ReflectionTestUtils.setField(order, "id", orderId);
+        ReflectionTestUtils.setField(order, "createdAt", Instant.parse("2026-08-14T11:22:51.108374Z"));
+        ReflectionTestUtils.setField(order, "updatedAt", Instant.parse("2026-08-14T11:22:51.108496Z"));
+        order.addItem(new OrderItem(product, 1, product.getPrice()));
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.saveAndFlush(order)).thenReturn(order);
+
+        var response = orderService.updateStatus(orderId, new OrderStatusRequestDTO(OrderStatus.CANCELLED));
+
+        assertEquals(OrderStatus.CANCELLED, response.status());
+        assertEquals(11, product.getStockQuantity());
+        verify(orderRepository).saveAndFlush(order);
+    }
+
+    @Test
+    void updateStatusShouldThrowWhenStatusDoesNotChange() {
+        UUID orderId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Order order = new Order(client, OrderStatus.PENDING, new BigDecimal("159.80"));
+        ReflectionTestUtils.setField(order, "id", orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> orderService.updateStatus(orderId, new OrderStatusRequestDTO(OrderStatus.PENDING)));
+
+        assertEquals("Order already has status PENDING!", exception.getMessage());
+        verify(orderRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateStatusShouldThrowWhenPendingOrderGetsInvalidStatus() {
+        UUID orderId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Order order = new Order(client, OrderStatus.PENDING, new BigDecimal("159.80"));
+        ReflectionTestUtils.setField(order, "id", orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> orderService.updateStatus(orderId, new OrderStatusRequestDTO(OrderStatus.COMPLETED)));
+
+        assertEquals("Pending orders can only be confirmed or cancelled!", exception.getMessage());
+        verify(orderRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateStatusShouldThrowWhenConfirmedOrderGetsInvalidStatus() {
+        UUID orderId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Order order = new Order(client, OrderStatus.CONFIRMED, new BigDecimal("159.80"));
+        ReflectionTestUtils.setField(order, "id", orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> orderService.updateStatus(orderId, new OrderStatusRequestDTO(OrderStatus.PENDING)));
+
+        assertEquals("Confirmed orders can only be completed or cancelled!", exception.getMessage());
+        verify(orderRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateStatusShouldThrowWhenFinishedOrderChanges() {
+        UUID orderId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Order order = new Order(client, OrderStatus.CANCELLED, new BigDecimal("159.80"));
+        ReflectionTestUtils.setField(order, "id", orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> orderService.updateStatus(orderId, new OrderStatusRequestDTO(OrderStatus.CONFIRMED)));
+
+        assertEquals("Finished orders cannot change status!", exception.getMessage());
+        verify(orderRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void findAllShouldReturnMappedOrders() {
+        UUID clientId = UUID.randomUUID();
+        UUID firstOrderId = UUID.randomUUID();
+        UUID secondOrderId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Order first = new Order(client, OrderStatus.PENDING, new BigDecimal("159.80"));
+        ReflectionTestUtils.setField(first, "id", firstOrderId);
+        ReflectionTestUtils.setField(first, "createdAt", Instant.parse("2026-08-14T11:22:51.108374Z"));
+        ReflectionTestUtils.setField(first, "updatedAt", Instant.parse("2026-08-14T11:22:51.108496Z"));
+
+        Order second = new Order(client, OrderStatus.CONFIRMED, new BigDecimal("79.90"));
+        ReflectionTestUtils.setField(second, "id", secondOrderId);
+        ReflectionTestUtils.setField(second, "createdAt", Instant.parse("2026-08-14T11:22:51.108374Z"));
+        ReflectionTestUtils.setField(second, "updatedAt", Instant.parse("2026-08-14T11:22:51.108496Z"));
+
+        when(orderRepository.findAll()).thenReturn(List.of(first, second));
+
+        var response = orderService.findAll();
+
+        assertEquals(2, response.size());
+        assertEquals(firstOrderId, response.get(0).id());
+        assertEquals(secondOrderId, response.get(1).id());
+        verify(orderRepository).findAll();
+    }
+
+    @Test
+    void deleteShouldRemoveOrder() {
+        UUID orderId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+
+        Client client = new Client("Henrique", "henrique@gmail.com", "333", "12345678");
+        ReflectionTestUtils.setField(client, "id", clientId);
+
+        Order order = new Order(client, OrderStatus.PENDING, new BigDecimal("159.80"));
+        ReflectionTestUtils.setField(order, "id", orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        orderService.delete(orderId);
+
+        verify(orderRepository).delete(order);
+    }
+
+    @Test
+    void deleteShouldThrowWhenOrderDoesNotExist() {
+        UUID orderId = UUID.randomUUID();
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> orderService.delete(orderId));
+
+        assertEquals("Order not found!", exception.getMessage());
     }
 
     @Test
