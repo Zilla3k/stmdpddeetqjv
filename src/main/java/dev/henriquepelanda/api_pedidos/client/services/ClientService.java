@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.Locale;
 
 @Service
 public class ClientService {
@@ -24,20 +25,24 @@ public class ClientService {
 
   public ClientResponseDTO create(ClientRequestDTO request)
   {
-    if(_clientRepository.existsByEmail(request.email()))
+    String name = requireText(request.name(), "Name cannot be blank!");
+    String email = normalizeEmail(request.email());
+    String document = requireText(request.document(), "Document cannot be blank!");
+
+    if(_clientRepository.existsByEmail(email))
     {
       throw new BusinessException("Email already exist!");
     }
 
-    if(_clientRepository.existsByDocument(request.document()))
+    if(_clientRepository.existsByDocument(document))
     {
       throw new BusinessException("Document already exists!");
     }
 
     Client client = new Client(
-      request.name(),
-      request.email(),
-      request.document(),
+      name,
+      email,
+      document,
       request.password()
     );
 
@@ -79,12 +84,16 @@ public class ClientService {
     Client client = _clientRepository.findById(id)
             .orElseThrow(() -> new BusinessException("Client not found!"));
 
-    String name = request.name() != null ? request.name() : client.getName();
-    String email = request.email() != null ? request.email() : client.getEmail();
-    String document = request.document() != null ? request.document() : client.getDocument();
+    String name = request.name() != null ? requireText(request.name(), "Name cannot be blank!") : client.getName();
+    String email = request.email() != null ? normalizeEmail(request.email()) : client.getEmail();
+    String document = request.document() != null ? requireText(request.document(), "Document cannot be blank!") : client.getDocument();
 
-    if (request.email() != null && !request.email().equals(client.getEmail()) && _clientRepository.existsByEmail(request.email())) {
+    if (request.email() != null && !email.equals(client.getEmail()) && _clientRepository.existsByEmail(email)) {
       throw new BusinessException("Email already exists!");
+    }
+
+    if (request.document() != null && !document.equals(client.getDocument()) && _clientRepository.existsByDocument(document)) {
+      throw new BusinessException("Document already exists!");
     }
 
     client.update(
@@ -108,5 +117,18 @@ public class ClientService {
             .orElseThrow(() -> new BusinessException("Client not found!"));
 
     _clientRepository.delete(client);
+  }
+
+  private String requireText(String value, String message) {
+    if (value == null || value.trim().isEmpty()) {
+      throw new BusinessException(message);
+    }
+
+    return value.trim();
+  }
+
+  private String normalizeEmail(String email) {
+    String normalized = requireText(email, "Email cannot be blank!");
+    return normalized.toLowerCase(Locale.ROOT);
   }
 }

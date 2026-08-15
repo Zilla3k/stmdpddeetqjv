@@ -25,22 +25,17 @@ public class CategoryService {
     CategoryRequestDTO request
   )
   {
-    if(_categoryRepository.existsByName(request.name()))
+    String name = requireText(request.name(), "Category name invalid!");
+    String description = requireText(request.description(), "Description invalid!");
+
+    if(_categoryRepository.existsByName(name))
     {
       throw new BusinessException("Category name already exist!");
     }
 
-    if(request.name() == null){
-      throw new BusinessException("Category name invalid!");
-    }
-
-    if (request.description() == null) {
-      throw new BusinessException("Description invalid!");
-    }
-
     Category category = new Category(
-            request.name(),
-            request.description()
+            name,
+            description
     );
 
     Category savedCategory = _categoryRepository.save(category);
@@ -79,9 +74,16 @@ public class CategoryService {
     Category category = _categoryRepository.findById(id)
             .orElseThrow(() -> new BusinessException("category not found!"));
 
+    String name = request.name() != null ? requireText(request.name(), "Category name invalid!") : category.getName();
+    String description = request.description() != null ? requireText(request.description(), "Description invalid!") : category.getDescription();
+
+    if (request.name() != null && !name.equals(category.getName()) && _categoryRepository.existsByName(name)) {
+      throw new BusinessException("Category name already exist!");
+    }
+
     category.update(
-            request.name(),
-            request.description()
+            name,
+            description
     );
 
     Category updated = _categoryRepository.save(category);
@@ -98,5 +100,13 @@ public class CategoryService {
             .orElseThrow(() -> new BusinessException("Category not found!"));
 
     _categoryRepository.delete(category);
+  }
+
+  private String requireText(String value, String message) {
+    if (value == null || value.trim().isBlank()) {
+      throw new BusinessException(message);
+    }
+
+    return value.trim();
   }
 }

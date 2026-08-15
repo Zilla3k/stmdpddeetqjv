@@ -27,7 +27,10 @@ public class ProductService {
   }
 
   public ProductResponseDTO create(ProductRequestDTO request){
-    if(_productRepository.existsByName(request.name())){
+    String name = requireText(request.name(), "Product name cannot be blank!");
+    String description = requireText(request.description(), "Product description cannot be blank!");
+
+    if(_productRepository.existsByName(name)){
       throw new BusinessException("Product name already exists!");
     }
 
@@ -39,9 +42,13 @@ public class ProductService {
       throw new BusinessException("Price must be greater than zero!");
     }
 
+    if (request.stockQuantity() < 0) {
+      throw new BusinessException("Stock must be greater than or equal to zero!");
+    }
+
     Product product = new Product(
-            request.name(),
-            request.description(),
+            name,
+            description,
             request.price(),
             request.categoryId(),
             request.stockQuantity()
@@ -91,16 +98,34 @@ public class ProductService {
     Product product = _productRepository.findById(id)
             .orElseThrow(() -> new BusinessException("Product not found!"));
 
+    String name = request.name() != null ? requireText(request.name(), "Product name cannot be blank!") : product.getName();
+    String description = request.description() != null ? requireText(request.description(), "Product description cannot be blank!") : product.getDescription();
+    BigDecimal price = request.price() != null ? request.price() : product.getPrice();
+    UUID categoryId = request.categoryId() != null ? request.categoryId() : product.getCategoryId();
+    Integer stockQuantity = request.stockQuantity() != null ? request.stockQuantity() : product.getStockQuantity();
+
+    if (request.name() != null && !request.name().equals(product.getName()) && _productRepository.existsByName(request.name())) {
+      throw new BusinessException("Product name already exists!");
+    }
+
+    if (request.price() != null && request.price().compareTo(BigDecimal.ZERO) <= 0) {
+      throw new BusinessException("Price must be greater than zero!");
+    }
+
+    if (request.stockQuantity() != null && request.stockQuantity() < 0) {
+      throw new BusinessException("Stock must be greater than or equal to zero!");
+    }
+
     if (request.categoryId() != null && !categoryRepository.existsById(request.categoryId())) {
       throw new BusinessException("Category not found!");
     }
 
     product.update(
-            request.name(),
-            request.description(),
-            request.price(),
-            request.categoryId(),
-            request.stockQuantity()
+            name,
+            description,
+            price,
+            categoryId,
+            stockQuantity
     );
 
     Product updated = _productRepository.save(product);
@@ -120,5 +145,13 @@ public class ProductService {
             .orElseThrow(() -> new BusinessException("Product not found!"));
 
     _productRepository.delete(product);
+  }
+
+  private String requireText(String value, String message) {
+    if (value == null || value.trim().isEmpty()) {
+      throw new BusinessException(message);
+    }
+
+    return value.trim();
   }
 }
