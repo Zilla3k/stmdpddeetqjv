@@ -30,6 +30,7 @@ public class ProductController {
   }
 
   @GetMapping
+  @ResponseStatus(HttpStatus.OK)
   public Page<ProductResponseDTO> findAll(
           @RequestParam(required = false) String name,
           @RequestParam(required = false) UUID categoryId,
@@ -39,16 +40,19 @@ public class ProductController {
   }
 
   @GetMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
   public ProductResponseDTO findById(@PathVariable UUID id){
     return productService.findById(id);
   }
 
   @PatchMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
   public ProductResponseDTO update(@PathVariable UUID id, @RequestBody @Valid ProductUpdateDTO request){
     return productService.update(id, request);
   }
 
   @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable UUID id){
     productService.delete(id);
   }

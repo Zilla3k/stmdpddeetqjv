@@ -35,16 +35,19 @@ public class OrderController {
     }
 
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public List<OrderResponseDTO> findAll() {
         return orderService.findAll();
     }
 
     @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public OrderResponseDTO findById(@PathVariable UUID id) {
         return orderService.findById(id);
     }
 
     @PatchMapping("/{id}/status")
+    @ResponseStatus(HttpStatus.OK)
     public OrderResponseDTO updateStatus(
             @PathVariable UUID id,
             @RequestBody @Valid OrderStatusRequestDTO request
