@@ -6,6 +6,8 @@ import dev.henriquepelanda.api_pedidos.category.dto.CategoryUpdateDTO;
 import dev.henriquepelanda.api_pedidos.category.entity.Category;
 import dev.henriquepelanda.api_pedidos.category.repository.CategoryRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import dev.henriquepelanda.api_pedidos.common.exception.InvalidRequestException;
+import dev.henriquepelanda.api_pedidos.common.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -61,7 +63,7 @@ public class CategoryService {
 
   public CategoryResponseDTO findById(UUID id){
     Category category = _categoryRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("category not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("category not found!"));
 
     return new CategoryResponseDTO(
             category.getId(),
@@ -72,13 +74,13 @@ public class CategoryService {
 
   public CategoryResponseDTO update(UUID id, CategoryUpdateDTO request){
     Category category = _categoryRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("category not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("category not found!"));
 
     String name = request.name() != null ? requireText(request.name(), "Category name invalid!") : category.getName();
     String description = request.description() != null ? requireText(request.description(), "Description invalid!") : category.getDescription();
 
     if (request.name() != null && !name.equals(category.getName()) && _categoryRepository.existsByName(name)) {
-      throw new BusinessException("Category name already exist!");
+      throw new BusinessException("Category name already exists!");
     }
 
     category.update(
@@ -97,14 +99,14 @@ public class CategoryService {
 
   public void delete(UUID id){
     Category category = _categoryRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Category not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Category not found!"));
 
     _categoryRepository.delete(category);
   }
 
   private String requireText(String value, String message) {
     if (value == null || value.trim().isBlank()) {
-      throw new BusinessException(message);
+      throw new InvalidRequestException(message);
     }
 
     return value.trim();

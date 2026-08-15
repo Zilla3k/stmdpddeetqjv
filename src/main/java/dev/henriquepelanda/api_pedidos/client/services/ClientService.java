@@ -7,6 +7,8 @@ import dev.henriquepelanda.api_pedidos.client.entity.Client;
 import dev.henriquepelanda.api_pedidos.client.repository.ClientRepository;
 import dev.henriquepelanda.api_pedidos.client.specifications.ClientSpecification;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import dev.henriquepelanda.api_pedidos.common.exception.InvalidRequestException;
+import dev.henriquepelanda.api_pedidos.common.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -70,7 +72,7 @@ public class ClientService {
 
   public ClientResponseDTO findById(UUID id){
     Client client = _clientRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Client not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Client not found!"));
 
     return new ClientResponseDTO(
             client.getId(),
@@ -82,7 +84,7 @@ public class ClientService {
 
   public ClientResponseDTO update(UUID id, ClientUpdateDTO request){
     Client client = _clientRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Client not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Client not found!"));
 
     String name = request.name() != null ? requireText(request.name(), "Name cannot be blank!") : client.getName();
     String email = request.email() != null ? normalizeEmail(request.email()) : client.getEmail();
@@ -114,14 +116,14 @@ public class ClientService {
 
   public void delete(UUID id){
     Client client = _clientRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Client not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Client not found!"));
 
     _clientRepository.delete(client);
   }
 
   private String requireText(String value, String message) {
     if (value == null || value.trim().isEmpty()) {
-      throw new BusinessException(message);
+      throw new InvalidRequestException(message);
     }
 
     return value.trim();

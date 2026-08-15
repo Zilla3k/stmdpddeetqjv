@@ -2,6 +2,7 @@ package dev.henriquepelanda.api_pedidos.order.services;
 
 import dev.henriquepelanda.api_pedidos.client.repository.ClientRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
+import dev.henriquepelanda.api_pedidos.common.exception.ResourceNotFoundException;
 import dev.henriquepelanda.api_pedidos.order.dto.OrderRequestDTO;
 import dev.henriquepelanda.api_pedidos.order.dto.OrderItemRequestDTO;
 import dev.henriquepelanda.api_pedidos.order.dto.OrderItemResponseDTO;
@@ -34,7 +35,7 @@ public class OrderService {
     @Transactional
     public OrderResponseDTO create(OrderRequestDTO request) {
         var client = clientRepository.findById(request.clientId())
-                .orElseThrow(() -> new BusinessException("Client not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Client not found!"));
 
         if (request.items() == null || request.items().isEmpty()) {
             throw new BusinessException("Order must have at least one item!");
@@ -45,7 +46,7 @@ public class OrderService {
 
         for (OrderItemRequestDTO itemRequest : request.items()) {
             var product = productRepository.findById(itemRequest.productId())
-                    .orElseThrow(() -> new BusinessException("Product not found!"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
 
             if (itemRequest.quantity() > product.getStockQuantity()) {
                 throw new BusinessException("Insufficient stock for product " + product.getName() + "!");
@@ -67,7 +68,7 @@ public class OrderService {
         Order savedOrder = orderRepository.saveAndFlush(order);
 
         Order persistedOrder = orderRepository.findById(savedOrder.getId())
-                .orElseThrow(() -> new BusinessException("Order not found after save!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found after save!"));
 
         return toResponse(persistedOrder);
     }
@@ -83,7 +84,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponseDTO findById(UUID id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Order not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found!"));
 
         return toResponse(order);
     }
@@ -91,7 +92,7 @@ public class OrderService {
     @Transactional
     public OrderResponseDTO updateStatus(UUID id, OrderStatusRequestDTO request) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Order not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found!"));
 
         validateStatusTransition(order.getStatus(), request.status());
 
@@ -103,7 +104,7 @@ public class OrderService {
         Order updated = orderRepository.saveAndFlush(order);
 
         Order persistedOrder = orderRepository.findById(updated.getId())
-                .orElseThrow(() -> new BusinessException("Order not found after update!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found after update!"));
 
         return toResponse(persistedOrder);
     }
@@ -111,7 +112,7 @@ public class OrderService {
     @Transactional
     public void delete(UUID id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Order not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found!"));
 
         orderRepository.delete(order);
     }
