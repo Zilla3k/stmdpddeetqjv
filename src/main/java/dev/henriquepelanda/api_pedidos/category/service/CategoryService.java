@@ -2,6 +2,7 @@ package dev.henriquepelanda.api_pedidos.category.service;
 
 import dev.henriquepelanda.api_pedidos.category.dto.CategoryRequestDTO;
 import dev.henriquepelanda.api_pedidos.category.dto.CategoryResponseDTO;
+import dev.henriquepelanda.api_pedidos.category.dto.CategoryUpdateDTO;
 import dev.henriquepelanda.api_pedidos.category.entity.Category;
 import dev.henriquepelanda.api_pedidos.category.repository.CategoryRepository;
 import dev.henriquepelanda.api_pedidos.common.exception.BusinessException;
@@ -74,7 +75,7 @@ public class CategoryService {
     );
   }
 
-  public CategoryResponseDTO update(UUID id, CategoryRequestDTO request){
+  public CategoryResponseDTO update(UUID id, CategoryUpdateDTO request){
     Category category = _categoryRepository.findById(id)
             .orElseThrow(() -> new BusinessException("category not found!"));
 

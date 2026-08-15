@@ -2,6 +2,7 @@ package dev.henriquepelanda.api_pedidos.client.controller;
 
 import dev.henriquepelanda.api_pedidos.client.dto.ClientRequestDTO;
 import dev.henriquepelanda.api_pedidos.client.dto.ClientResponseDTO;
+import dev.henriquepelanda.api_pedidos.client.dto.ClientUpdateDTO;
 import dev.henriquepelanda.api_pedidos.client.services.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -44,7 +45,7 @@ public class ClientController {
 
   @PatchMapping("/{id}")
   @ResponseStatus(HttpStatus.OK)
-  public ClientResponseDTO update(@PathVariable UUID id, @RequestBody ClientRequestDTO request){
+  public ClientResponseDTO update(@PathVariable UUID id, @RequestBody @Valid ClientUpdateDTO request){
     return clientService.update(id, request);
   }
 

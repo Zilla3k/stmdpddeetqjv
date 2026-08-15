@@ -3,6 +3,7 @@ package dev.henriquepelanda.api_pedidos.product.controller;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductRequestDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductFilterDTO;
 import dev.henriquepelanda.api_pedidos.product.dto.ProductResponseDTO;
+import dev.henriquepelanda.api_pedidos.product.dto.ProductUpdateDTO;
 import dev.henriquepelanda.api_pedidos.product.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -43,7 +44,7 @@ public class ProductController {
   }
 
   @PatchMapping("/{id}")
-  public ProductResponseDTO update(@PathVariable UUID id, @RequestBody ProductRequestDTO request){
+  public ProductResponseDTO update(@PathVariable UUID id, @RequestBody @Valid ProductUpdateDTO request){
     return productService.update(id, request);
   }
 

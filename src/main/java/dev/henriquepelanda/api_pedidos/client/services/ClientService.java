@@ -2,6 +2,7 @@ package dev.henriquepelanda.api_pedidos.client.services;
 
 import dev.henriquepelanda.api_pedidos.client.dto.ClientRequestDTO;
 import dev.henriquepelanda.api_pedidos.client.dto.ClientResponseDTO;
+import dev.henriquepelanda.api_pedidos.client.dto.ClientUpdateDTO;
 import dev.henriquepelanda.api_pedidos.client.entity.Client;
 import dev.henriquepelanda.api_pedidos.client.repository.ClientRepository;
 import dev.henriquepelanda.api_pedidos.client.specifications.ClientSpecification;
@@ -23,11 +24,6 @@ public class ClientService {
 
   public ClientResponseDTO create(ClientRequestDTO request)
   {
-    if(!request.password().equals(request.confirmPassword()))
-    {
-      throw new BusinessException("Password and Confirm Password do not match");
-    }
-
     if(_clientRepository.existsByEmail(request.email()))
     {
       throw new BusinessException("Email already exist!");
@@ -74,19 +70,27 @@ public class ClientService {
     return new ClientResponseDTO(
             client.getId(),
             client.getName(),
-            client.getDocument(),
-            client.getEmail()
+            client.getEmail(),
+            client.getDocument()
     );
   }
 
-  public ClientResponseDTO update(UUID id, ClientRequestDTO request){
+  public ClientResponseDTO update(UUID id, ClientUpdateDTO request){
     Client client = _clientRepository.findById(id)
             .orElseThrow(() -> new BusinessException("Client not found!"));
 
+    String name = request.name() != null ? request.name() : client.getName();
+    String email = request.email() != null ? request.email() : client.getEmail();
+    String document = request.document() != null ? request.document() : client.getDocument();
+
+    if (request.email() != null && !request.email().equals(client.getEmail()) && _clientRepository.existsByEmail(request.email())) {
+      throw new BusinessException("Email already exists!");
+    }
+
     client.update(
-            request.name(),
-            request.email(),
-            request.document()
+            name,
+            email,
+            document
     );
 
     Client updated = _clientRepository.save(client);
@@ -94,8 +98,8 @@ public class ClientService {
     return new ClientResponseDTO(
             updated.getId(),
             updated.getName(),
-            updated.getDocument(),
-            updated.getEmail()
+            updated.getEmail(),
+            updated.getDocument()
     );
   }
 
